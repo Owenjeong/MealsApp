@@ -6,14 +6,44 @@ import 'package:meals/screen/meals.dart';
 import 'package:meals/wideget/category_grid_item.dart';
 import 'package:meals/models/category.dart';
 
-class CategoriesScreen extends StatelessWidget {
-  const CategoriesScreen ({super.key, required this.ontoggleFavorite, required this.availableMeals});
+class CategoriesScreen extends StatefulWidget {
+  const CategoriesScreen({
+    super.key,
+    required this.ontoggleFavorite,
+    required this.availableMeals,
+  });
 
   final void Function(Meal meal) ontoggleFavorite;
   final List<Meal> availableMeals;
 
+  @override
+  State<CategoriesScreen> createState() => _CategoriesScreenState();
+}
+
+class _CategoriesScreenState extends State<CategoriesScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+      lowerBound: 0,
+      upperBound: 1,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   void _selectedCategory(BuildContext context, Category category) {
-    final filteredMeal = availableMeals.where((meal) {
+    final filteredMeal = widget.availableMeals.where((meal) {
       return meal.categories.contains(category.id);
     }).toList();
 
@@ -22,7 +52,7 @@ class CategoriesScreen extends StatelessWidget {
         builder: (ctx) => Mealscreen(
           title: category.title,
           meals: filteredMeal,
-          ontoggleFavorite: ontoggleFavorite,
+          ontoggleFavorite: widget.ontoggleFavorite,
         ),
       ),
     );
@@ -30,8 +60,9 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return 
-      GridView(
+    return AnimatedBuilder(
+      animation: _animationController,
+      child: GridView(
         padding: const EdgeInsets.all(25),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 200,
@@ -41,13 +72,20 @@ class CategoriesScreen extends StatelessWidget {
         ),
         children: [
           //availableCategories.map((category) => CategoryGridItem(category: category)).toList(),
-          for (final category in availableCategories) 
+          for (final category in availableCategories)
             CategoryGridItem(
-              category: category, 
+              category: category,
               onSelectCategory: () {
                 _selectedCategory(context, category);
-            },),
+
+              },
+            ),
         ],
-      );
+      ),
+      builder: (context, child) => Padding(padding: EdgeInsets.only(
+        top: 100 - (_animationController.value * 100),
+      ), child: child
+    ),
+    );
   }
 }
